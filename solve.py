@@ -1,3 +1,8 @@
+#!/usr/bin/env python3
+# (C) 2022 Grant Iraci <grantira@buffalo.edu>
+
+# I don't think double letters are handled correctly
+
 answer = 'POINT'
 
 board = r"""
@@ -10,7 +15,7 @@ board = r"""
 """
 
 hard_mode = True
-extras = True
+extras = False
 
 from z3 import *
 
@@ -36,7 +41,7 @@ must_use_green = []
 
 
 def green(i,j):
-    must_use_green.extend([row[j-1] == ans[j-1] for row in grid[i:]])
+    must_use_green.extend([Or(row[j-1] == ans[j-1], row[j-1] == 0) for row in grid[i:]])
     s.add(grid[i-1][j-1] == ans[j-1])
 
 def gray(i,j):
@@ -44,7 +49,7 @@ def gray(i,j):
     s.add(And(*(grid[i-1][j-1] != l for l in ans)))
 
 def gold(i, j):
-    must_use_gold.extend([And(Or(*[a == grid[i-1][j-1] for a in row]), row[j-1] != grid[i-1][j-1]) for row in grid[i:]])
+    must_use_gold.extend([And(Or(*[a == grid[i-1][j-1] for a in row], row[0] == 0), row[j-1] != grid[i-1][j-1]) for row in grid[i:]])
     s.add(And(Or(*(grid[i-1][j-1] == l for l in ans)), Not(grid[i-1][j-1] == ans[j-1])))
 
 def used(r):
@@ -85,18 +90,25 @@ else:
 board = board.strip().splitlines()
 
 for i, guess in enumerate(board):
-    used(i)
+    used(i+1)
+    print(i+1,': ',  end='')
     for j, l in enumerate(guess):
-        if l == '⬜':
+        if l == '⬜' or l == 'w':
+            print('⬜', end='')
             gray(i+1, j+1)
-        if l == '🟨':
+        if l == '🟨' or l == 'y':
+            print('🟨', end='')
             gold(i+1, j+1)
-        if l == '🟩':
+        if l == '🟩' or l == 'g':
+            print('🟩', end='')
             green(i+1, j+1)
+    print()
 
 for i in range(len(board), len(grid)):
+    print(i+1, ':', '     ')
     unused(i+1)
 
+print()
 
 if extras:
     ltr_in(1, 'A')
